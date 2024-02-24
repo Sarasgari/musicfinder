@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood Playlist Generator</title>
+</head>
+<body>
+  <h1>Mood Playlist Generator</h1>
+  <label for="mood-input">Enter your mood:</label>
+  <input type="text" id="mood-input">
+  <button onclick="searchSongs(event.target.dataset.mood)">Search Songs</button>
+  <ul id="search-results"></ul>
+  <button onclick="savePlaylist()">Save Playlist</button>
+  <ul id="playlist"></ul>
+
+  <script>
+    let playlist = [];
+
+    function addToPlaylist(song) {
+      playlist.push(song);
+      displayPlaylist();
+    }
+
+    function displayPlaylist() {
+      const playlistElement = document.getElementById('playlist');
+      playlistElement.innerHTML = '';
+      for (let i = 0; i < playlist.length; i++) {
+        const songElement = document.createElement('li');
+        songElement.textContent = playlist[i].name;
+        playlistElement.appendChild(songElement);
+      }
+    }
+
+    function searchSongs(moodLabel) {
+      const accessToken = 'YOUR_ACCESS_TOKEN';
+      const headers = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      };
+      const body = JSON.stringify({
+        q: `mood:${moodLabel}`,
+        type: 'track'
+      });
+
+      fetch('https://api.spotify.com/v1/search', {
+        method: 'POST',
+        headers: headers,
+        body: body
+      })
+      .then(response => response.json())
+      .then(data => {
+        displaySearchResults(data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+    }
+
+    function displaySearchResults(results) {
+      const searchResultsElement = document.getElementById('search-results');
+      searchResultsElement.innerHTML = '';
+      for (let i = 0; i < results.tracks.items.length; i++) {
+        const song = results.tracks.items[i];
+        const songElement = document.createElement('li');
+        songElement.dataset.song = JSON.stringify(song);
+        songElement.textContent = song.name;
+        searchResultsElement.appendChild(songElement);
+      }
+    }
+
+    function savePlaylist() {
+      const accessToken = 'YOUR_ACCESS_TOKEN';
+      const headers = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      };
+      const body = JSON.stringify({
+        name: 'My Mood Playlist',
+        description: 'A playlist generated based on my mood',
+        tracks: playlist.map(song => ({ uri: song.uri }))
+      });
+
+      fetch('https://api.spotify.com/v1/users/USER_ID/playlists', {
+        method: 'POST',
+        headers: headers,
+        body: body
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Playlist created:', data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+    }
+  </script>
+</body>
+</html>
